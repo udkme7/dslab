@@ -1,0 +1,92 @@
+import pandas as pd
+import seaborn as sns
+
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+df = sns.load_dataset('titanic')
+df = df[['survived', 'age', 'sex', 'embarked', 'class']]
+df = df.dropna()
+df.head()
+
+X = df.drop('survived', axis=1)
+y = df['survived']
+
+print("Categorical features:", ['sex', 'embarked', 'class'])
+
+onehot = pd.get_dummies(X, columns=['sex', 'embarked', 'class'], dtype=int)
+print("One-Hot Encoded Data:")
+onehot.head()
+
+label = X.copy()
+for col in ['sex', 'embarked', 'class']:
+    label[col] = LabelEncoder().fit_transform(label[col])
+print("Label Encoded Data:")
+label.head()
+
+target = X.copy()
+for col in ['sex', 'embarked', 'class']:
+    means = pd.DataFrame({'feature': X[col], 'target': y}).groupby('feature')['target'].mean()
+    target[col] = X[col].map(means)
+print("Target Encoded Data:")
+target.head()
+
+memory = pd.DataFrame({
+    'Encoding': ['One-Hot', 'Label', 'Target'],
+    'Memory (KB)': [
+        onehot.memory_usage(deep=True).sum() / 1024,
+        label.memory_usage(deep=True).sum() / 1024,
+        target.memory_usage(deep=True).sum() / 1024
+    ]
+})
+memory
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+X_train_oh = pd.get_dummies(X_train, columns=['sex', 'embarked', 'class'], dtype=int)
+X_test_oh = pd.get_dummies(X_test, columns=['sex', 'embarked', 'class'], dtype=int)
+X_test_oh = X_test_oh.reindex(columns=X_train_oh.columns, fill_value=0)
+model_oh = LogisticRegression(max_iter=1000)
+model_oh.fit(X_train_oh, y_train)
+pred_oh = model_oh.predict(X_test_oh)
+print("One-Hot Accuracy:", accuracy_score(y_test, pred_oh))
+
+X_train_le = X_train.copy()
+X_test_le = X_test.copy()
+for col in ['sex', 'embarked', 'class']:
+    le = LabelEncoder()
+    X_train_le[col] = le.fit_transform(X_train_le[col])
+    X_test_le[col] = le.transform(X_test_le[col])
+model_le = LogisticRegression(max_iter=1000)
+model_le.fit(X_train_le, y_train)
+pred_le = model_le.predict(X_test_le)
+print("Label Encoding Accuracy:", accuracy_score(y_test, pred_le))
+
+X_train_te = X_train.copy()
+X_test_te = X_test.copy()
+for col in ['sex', 'embarked', 'class']:
+    means = pd.DataFrame({
+        'feature': X_train[col],
+        'target': y_train
+    }).groupby('feature')['target'].mean()
+
+    X_train_te[col] = X_train[col].map(means)
+    X_test_te[col] = X_test[col].map(means)
+model_te = LogisticRegression(max_iter=1000)
+model_te.fit(X_train_te, y_train)
+pred_te = model_te.predict(X_test_te)
+print("Target Encoding Accuracy:", accuracy_score(y_test, pred_te))
+
+results = pd.DataFrame({
+    'Encoding': ['One-Hot', 'Label', 'Target'],
+    'Accuracy': [
+        accuracy_score(y_test, pred_oh),
+        accuracy_score(y_test, pred_le),
+        accuracy_score(y_test, pred_te)
+    ]
+})
+results

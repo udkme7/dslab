@@ -1,0 +1,67 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.impute import KNNImputer
+
+df = sns.load_dataset('titanic')
+df = df[['age', 'fare', 'sibsp', 'parch']]
+df.head()
+
+print("Missing values:")
+print(df.isnull().sum())
+
+mean_df = df.fillna(df.mean())
+median_df = df.fillna(df.median())
+mode_df = df.fillna(df.mode().iloc[0])
+
+print("Mean Imputation:\n", mean_df.head())
+print("\nMedian Imputation:\n", median_df.head())
+print("\nMode Imputation:\n", mode_df.head())
+
+knn = KNNImputer(n_neighbors=5)
+
+knn_df = pd.DataFrame(
+    knn.fit_transform(df),
+    columns=df.columns
+)
+
+print("KNN Imputation:")
+knn_df.head()
+
+print("Original missing values:")
+print(df.isnull().sum())
+
+print("\nAfter KNN Imputation:")
+print(knn_df.isnull().sum())
+
+df.plot(kind='box', figsize=(8,4))
+plt.title("Box Plot for Outlier Detection")
+plt.show()
+
+plt.scatter(knn_df['age'], knn_df['fare'])
+plt.xlabel("Age")
+plt.ylabel("Fare")
+plt.title("Age vs Fare")
+plt.show()
+
+Q1 = knn_df.quantile(0.25)
+Q3 = knn_df.quantile(0.75)
+IQR = Q3 - Q1
+
+outliers = ((knn_df < Q1 - 1.5*IQR) |
+            (knn_df > Q3 + 1.5*IQR))
+
+print("Number of outliers:")
+print(outliers.sum())
+
+cleaned_df = knn_df[~outliers.any(axis=1)]
+
+print("Original rows:", len(knn_df))
+print("Rows after outlier treatment:", len(cleaned_df))
+
+cleaned_df.head()
+print("Missing values:")
+print(cleaned_df.isnull().sum())
+
+print("\nCleaned Dataset:")
+print(cleaned_df.head())

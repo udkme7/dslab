@@ -1,0 +1,51 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.graphics.tsaplots import plot_acf
+
+data = pd.Series(
+    [20, 25, 30, 28, 35, 40, 38, 45, 50, 48, 55, 60,
+     40, 45, 50, 48, 55, 60, 58, 65, 70, 68, 75, 80],
+    index=pd.date_range(start="2024-01-01", periods=24, freq="MS")
+)
+
+print(data)
+
+data.plot()
+plt.title("Time Series Data")
+plt.xlabel("Month")
+plt.ylabel("Value")
+plt.show()
+
+result = seasonal_decompose(data, model="additive", period=12)
+
+result.plot()
+plt.show()
+
+moving_avg = data.rolling(window=3).mean()
+
+data.plot(label="Original")
+moving_avg.plot(label="Moving Average")
+
+plt.legend()
+plt.title("Moving Average")
+plt.show()
+
+plot_acf(data, lags=10)
+plt.title("Autocorrelation Plot")
+plt.show()
+
+print("Monthly values:")
+print(data)
+
+print("\nSeasonal Component:")
+print(result.seasonal)
+
+print("\nTrend Component:")
+print(result.trend)
+
+print("Time series data was plotted and decomposed.")
+print("Trend, seasonality, and residual components were analysed.")
+print("Moving average was used to observe the overall trend.")
+print("ACF was used to identify temporal dependencies.")
+print("Repeated patterns may indicate seasonality.")

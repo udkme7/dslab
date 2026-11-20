@@ -1,0 +1,50 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+df = sns.load_dataset('iris')
+df.head()
+
+num = df.select_dtypes(include='number')
+num.head()
+
+print("Mean:")
+print(num.mean())
+print("\nMedian:")
+print(num.median())
+print("\nMode:")
+print(num.mode().iloc[0])
+
+num.hist(figsize=(10, 6))
+plt.suptitle("Feature Distributions")
+plt.show()
+
+num.plot(kind='box', figsize=(8, 5))
+plt.title("Box Plots")
+plt.show()
+
+result = pd.DataFrame({
+    'Skewness': num.skew(),
+    'Kurtosis': num.kurt()
+})
+result
+
+sns.scatterplot(data=df, x='sepal_length', y='petal_length', hue='species')
+plt.title("Sepal Length vs Petal Length")
+plt.show()
+
+sns.pairplot(df, hue='species')
+plt.show()
+
+plt.figure(figsize=(7, 5))
+sns.heatmap(num.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
+plt.show()
+
+pearson = num.corr(method='pearson')
+print("Pearson Correlation:")
+pearson
+
+spearman = num.corr(method='spearman')
+print("Spearman Correlation:")
+spearman

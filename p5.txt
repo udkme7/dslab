@@ -1,0 +1,62 @@
+import pandas as pd
+from sklearn.datasets import load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+data = load_diabetes(as_frame=True)
+X = data.data
+y = data.target
+print(X.head())
+
+vif = pd.DataFrame()
+vif["Feature"] = X.columns
+vif["VIF"] = [variance_inflation_factor(X.values, i)
+              for i in range(X.shape[1])]
+print(vif)
+
+while True:
+    vif = pd.DataFrame()
+    vif["Feature"] = X.columns
+    vif["VIF"] = [variance_inflation_factor(X.values, i)
+                  for i in range(X.shape[1])]
+
+    if vif["VIF"].max() <= 5:
+        break
+
+    feature = vif.loc[vif["VIF"].idxmax(), "Feature"]
+    print("Removing:", feature)
+    X = X.drop(columns=[feature])
+
+print("\nRemaining Features:")
+print(X.columns)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("R2 Score After Removing Features:", r2_score(y_test, y_pred))
+
+X_original = data.data
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_original, y, test_size=0.2, random_state=42
+)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("R2 Score Before Removing Features:", r2_score(y_test, y_pred))
+
+print("VIF identifies features with multicollinearity.")
+print("Features with VIF greater than 5 are removed.")
+print("R2 scores before and after removal are compared.")
+print("A higher R2 score indicates better model performance.")

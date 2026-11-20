@@ -1,0 +1,58 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_diabetes
+from sklearn.ensemble import IsolationForest
+from scipy.stats import zscore
+
+data = load_diabetes(as_frame=True)
+df = data.data
+
+print(df.head())
+print(df.describe())
+
+z = abs(zscore(df))
+anomalies_z = (z > 3).any(axis=1)
+print("Anomalies using Z-score:", anomalies_z.sum())
+
+Q1 = df.quantile(0.25)
+Q3 = df.quantile(0.75)
+
+IQR = Q3 - Q1
+
+anomalies_iqr = ((df < Q1 - 1.5 * IQR) |
+                 (df > Q3 + 1.5 * IQR)).any(axis=1)
+
+print("Anomalies using IQR:", anomalies_iqr.sum())
+
+plt.figure(figsize=(10, 5))
+df.boxplot()
+plt.title("Box Plot Before Removing Anomalies")
+plt.show()
+df_clean = df[~anomalies_iqr]
+
+print("Original Dataset Statistics:")
+print(df.describe())
+
+print("\nDataset After Removing Anomalies:")
+print(df_clean.describe())
+
+df.iloc[:, 0].hist(alpha=0.5, label="Original")
+df_clean.iloc[:, 0].hist(alpha=0.5, label="Cleaned")
+
+plt.title("Distribution Before and After Removing Anomalies")
+plt.xlabel("Feature Value")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()
+
+model = IsolationForest(contamination=0.05, random_state=42)
+
+df["Anomaly"] = model.fit_predict(data.data)
+
+print("Anomalies detected:", (df["Anomaly"] == -1).sum())
+print(df.head())
+
+print("Z-score and IQR were used to detect anomalies.")
+print("Box plots and histograms were used for visualization.")
+print("Statistics were compared before and after removing anomalies.")
+print("Isolation Forest was used for algorithm-based anomaly detection.")
